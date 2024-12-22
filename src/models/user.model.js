@@ -64,39 +64,33 @@ userSchema.methods.isPasswordCorrect = async function (password) {
     return await bcrypt.compare(password, this.password)
 }
 
-// Define a method called "generateAccessToken" for the user schema
+// Generate Access Token
 userSchema.methods.generateAccessToken = function() {
-    // Use the `jwt.sign` method to generate a signed JSON Web Token
     return jwt.sign(
         {
-            // The payload of the token includes user-specific details:
-            _id: this._id,        // The unique identifier of the user from the database
-            email: this.email,    // The user's email address
-            username: this.username, // The user's username
-            fullName: this.fullName  // The user's full name
+            _id: this._id,
+            email: this.email,
+            username: this.username,
+            fullName: this.fullname,
         },
-        process.env.ACCESS_TOKEN_SECRET, // The secret key used to sign the token, stored in an environment variable
+        process.env.ACCESS_TOKEN_SECRET,
         {
-            expireIn: process.env.ACCESS_TOKEN_EXPIRY // Token expiration time, defined in the environment variable (e.g., '1h', '30m')
+            expiresIn: process.env.ACCESS_TOKEN_EXPIRY, // Use correct expiry format (e.g., '1d')
         }
-    )
-    // The resulting token is returned to the caller
-}
+    );
+};
 
-// Add a method called "generateRefreshToken" to the user schema
+// Generate Refresh Token
 userSchema.methods.generateRefreshToken = function() {
-    // Generate a refresh token using the `jwt.sign` method
     return jwt.sign(
         {
-            // Include the user's unique ID in the token payload
-            _id: this._id, // The user's database ID
+            _id: this._id,
         },
-        process.env.REFRESH_TOKEN_SECRET, // Secret key for signing the refresh token
+        process.env.REFRESH_TOKEN_SECRET,
         {
-            expireIn: process.env.REFRESH_TOKEN_EXPIRY // How long the refresh token is valid
+            expiresIn: process.env.REFRESH_TOKEN_EXPIRY, // Use correct expiry format (e.g., '10d')
         }
-    )
-    // Return the generated refresh token
-}
+    );
+};
 
 export const User = mongoose.model("User", userSchema);
