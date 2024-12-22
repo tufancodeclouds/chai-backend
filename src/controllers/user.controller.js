@@ -190,11 +190,16 @@ const logoutUser = asyncHandler(async (req, res) => {
     }
     
     // Clear the refresh token in the database
-    await User.findByIdAndUpdate(req.user._id, {
-        $set: {
-            refreshToken: null
+    await User.findByIdAndUpdate(req.user._id,
+        {
+            $set: {
+                refreshToken: null
+            }
+        },
+        {
+            new: true
         }
-    });
+    );
 
     const options = {
         httpOnly: true,
