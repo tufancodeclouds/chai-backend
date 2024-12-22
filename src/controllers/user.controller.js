@@ -182,4 +182,33 @@ const loginUser = asyncHandler(async (req, res) => {
         );
 });
 
-export { registerUser, loginUser };
+const logoutUser = asyncHandler(async (req, res) => {
+
+    // Check if user is authenticated
+    if (!req.user) {
+        throw new ApiError(400, "User not authenticated");
+    }
+    
+    // Clear the refresh token in the database
+    await User.findByIdAndUpdate(req.user._id, {
+        $set: {
+            refreshToken: null
+        }
+    });
+
+    const options = {
+        httpOnly: true,
+        secure: true,
+        sameSite: "none"
+    };
+
+    return res
+        .status(200)        
+        .clearCookie("accessToken", options)
+        .clearCookie("refreshToken", options)
+        .json(
+            new ApiResponse(200, null, "User Logged Out Successfully")
+        );
+});
+
+export { registerUser, loginUser, logoutUser };

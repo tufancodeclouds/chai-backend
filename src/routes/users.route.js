@@ -1,10 +1,12 @@
 import { Router } from "express";
 import { registerUser } from "../controllers/user.controller.js";
 import { loginUser } from "../controllers/user.controller.js";
+import { logoutUser } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { registerUserValidator } from "../validators/registerUserValidator.js";
 import { loginUserValidator } from "../validators/loginUserValidator.js";
 import { validate } from "../middlewares/validate.middleware.js";
+import { authenticate } from "../middlewares/authenticate.middleware.js";
 
 const router = Router();
 
@@ -29,5 +31,8 @@ router.route("/login").post(
     validate, // Handle validation errors
     loginUser // Controller logic
 );
+
+// secured routes
+router.route("/logout").post(authenticate, logoutUser);
 
 export default router;
