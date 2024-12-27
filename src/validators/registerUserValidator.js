@@ -3,9 +3,12 @@ import { body, check } from "express-validator";
 const registerUserValidator = [
   // Fullname validation
   body("fullname")
-    .trim()
-    .notEmpty()
-    .withMessage("Fullname is required"),
+    .trim() // Trim whitespace from the fullname
+    .notEmpty() // Fullname is required
+    .withMessage("Full name is required")
+    .bail() // Stop further validations if this fails
+    .isLength({ min: 3 }) // Ensure fullname is at least 3 characters long
+    .withMessage("Full name must be at least 3 characters long"),
 
   // Email validation
   body("email")

@@ -4,6 +4,7 @@ import { User } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
 
 const generateAccessAndRefreshTokens = async(userId) => {
     try {
@@ -213,7 +214,7 @@ const logoutUser = asyncHandler(async (req, res) => {
         .clearCookie("accessToken", options)
         .clearCookie("refreshToken", options)
         .json(
-            new ApiResponse(200, null, "User Logged Out Successfully")
+            new ApiResponse(200, {}, "User Logged Out Successfully")
         );
 });
 
@@ -257,4 +258,160 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     }
 });
 
-export { registerUser, loginUser, logoutUser, refreshAccessToken };
+const updateUser = asyncHandler(async (req, res) => {
+    const { fullname, email } = req.body;
+
+    // Ensure user is authenticated
+    if (!req.user || !req.user._id) {
+        throw new ApiError(400, "User not authenticated");
+    }
+
+    // Prepare the update object
+    const updateFields = {};
+
+    // Only add fields to the update object if they are provided in the request
+    if (fullname) {
+        updateFields.fullname = fullname;
+    }
+    if (email) {
+        updateFields.email = email;
+    }
+
+    // If neither fullname nor email is provided, throw an error
+    if (Object.keys(updateFields).length === 0) {
+        throw new ApiError(400, "At least one of 'fullname' or 'email' must be provided");
+    }
+
+    // Update the user in the database
+    const user = await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set: updateFields
+        },
+        {
+            // 'new: true' অপশনটি নিশ্চিত করে যে, আপডেট অপারেশনের পর আপডেট হওয়া ডকুমেন্টটি রিটার্ন হবে,
+            // অর্থাৎ এটি ডকুমেন্টের নতুন (আপডেট হওয়া) অবস্থাটি দেখাবে, পূর্বের (আগের) অবস্থাটি নয়।
+            new: true
+        }
+    ).select("-password -refreshToken"); // Exclude sensitive fields like password and refreshToken
+
+    return res.status(200).json(
+        new ApiResponse(200, user, "User details updated successfully")
+    );
+});
+
+const updateUserAvatar = asyncHandler(async (req, res) => {
+    const avatarLocalPath = req.file?.path;
+
+    if (!avatarLocalPath) {
+        throw new ApiError(400, "Avatar file not stored on localpath");
+    }
+
+    // upload avatar to cloudinary
+    const avatar = await uploadOnCloudinary(avatarLocalPath);
+
+    if (!avatar.url) {
+        throw new ApiError(400, "Avatar file not uploaded on cloudinary");
+    }
+
+    const user = await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set: {
+                avatar: avatar.url
+            }
+        },
+        {
+            new: true
+        }
+    ).select("-password -refreshToken");
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200, user, "Avatar updated successfully")
+    );
+});
+
+const updateUserCoverImage = asyncHandler(async (req, res) => {
+    const coverImageLocalPath = req.file?.path;
+
+    if (!coverImageLocalPath) {
+        throw new ApiError(400, "Cover image file not stored on localpath");
+    }
+
+    // upload cover image to cloudinary
+    const coverImage = await uploadOnCloudinary(coverImageLocalPath);
+
+    if (!coverImage.url) {
+        throw new ApiError(400, "Cover image file not uploaded on cloudinary");
+    }
+
+    const user = await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set: {
+                coverImage: coverImage.url
+            }
+        },
+        {
+            new: true
+        }
+    ).select("-password -refreshToken");
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200, user, "Cover image updated successfully")
+    );
+});
+
+const changePassword = asyncHandler(async (req, res) => {
+    const { currentPassword, newPassword, confirmNewPassword } = req.body;
+
+    if (!req.user || !req.user._id) {
+        throw new ApiError(400, "User not authenticated");
+    }
+
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+        throw new ApiError(404, "User not found");
+    }
+
+    if (newPassword !== confirmNewPassword) {
+        throw new ApiError(400, "New password and confirm new password do not match");
+    }
+
+    const isPasswordCorrect = await user.isPasswordCorrect(currentPassword);
+
+    if (!isPasswordCorrect) {
+        throw new ApiError(401, "Current password is incorrect");
+    }
+
+    user.password = newPassword;
+    await user.save({validateBeforeSave: false}); // Save the user object to the database, skipping validation checks before saving.
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200, {}, "Password changed successfully")
+    );
+});
+
+const getCurrentUser = asyncHandler(async (req, res) => {
+
+    if (!req.user) {
+        throw new ApiError(400, "User not authenticated");
+    }
+
+    // const user = await User.findById(req.user?._id).select("-password -refreshToken");
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200, req.user, "Current user found successfully")
+    );
+});
+
+export { registerUser, loginUser, logoutUser, refreshAccessToken, updateUser, updateUserAvatar, updateUserCoverImage, changePassword, getCurrentUser };
