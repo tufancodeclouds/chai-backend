@@ -8,6 +8,8 @@ import { updateUser } from "../controllers/user.controller.js";
 import { updateUserAvatar } from "../controllers/user.controller.js";
 import { getCurrentUser } from "../controllers/user.controller.js";
 import { updateUserCoverImage } from "../controllers/user.controller.js";
+import { getUserChannelProfile } from "../controllers/user.controller.js";
+import { getWatchHistory } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { registerUserValidator } from "../validators/registerUserValidator.js";
 import { loginUserValidator } from "../validators/loginUserValidator.js";
@@ -42,11 +44,13 @@ router.route("/login").post(
 
 // secured routes
 router.route("/logout").post(authenticate, logoutUser);
-router.route("/refresh-access-token").post(refreshAccessToken);
-router.route("/update-user").post(authenticate, updateUserValidator, validate, updateUser);
-router.route("/update-avatar").post(authenticate, upload.single('avatar'), updateUserAvatar);
-router.route("/update-cover-image").post(authenticate, upload.single('coverImage'), updateUserCoverImage);
+router.route("/refresh-token").post(refreshAccessToken);
 router.route("/change-password").post(authenticate, changePasswordValidator, validate, changePassword);
-router.route("/get-current-user").post(authenticate, getCurrentUser);
+router.route("/update-user").patch(authenticate, updateUserValidator, validate, updateUser);
+router.route("/avatar").patch(authenticate, upload.single('avatar'), updateUserAvatar);
+router.route("/cover-image").patch(authenticate, upload.single('coverImage'), updateUserCoverImage);
+router.route("/current-user").get(authenticate, getCurrentUser);
+router.route("/c/:username").get(authenticate, getUserChannelProfile);
+router.route("/history").get(authenticate, getWatchHistory);
 
 export default router;
