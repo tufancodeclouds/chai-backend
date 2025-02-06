@@ -5,10 +5,10 @@ const registerUserValidator = [
   body("fullname")
     .trim() // Trim whitespace from the fullname
     .notEmpty() // Fullname is required
-    .withMessage("Full name is required")
+    .withMessage("Fullname is required")
     .bail() // Stop further validations if this fails
     .isLength({ min: 3 }) // Ensure fullname is at least 3 characters long
-    .withMessage("Full name must be at least 3 characters long"),
+    .withMessage("Fullname must be at least 3 characters long"),
 
   // Email validation
   body("email")
