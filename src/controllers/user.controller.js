@@ -136,7 +136,8 @@ const registerUser = asyncHandler(async (req, res, next) => {
   }
 });
 
-const loginUser = asyncHandler(async (req, res) => {
+const loginUser = asyncHandler(async (req, res, next) => {
+  try {
   /*
     1. get user details from frontend (username or password)
     2. validate username or password
@@ -152,7 +153,8 @@ const loginUser = asyncHandler(async (req, res) => {
 
   // Check if either email or username is provided
   if (!email && !username) {
-    throw new ApiError(400, "Email or Username is required");
+    // throw new ApiError(400, "Email or Username is required");
+    return next(new ApiError(400, "Email or Username is required"));
   }
 
   // check if user exists
@@ -161,14 +163,16 @@ const loginUser = asyncHandler(async (req, res) => {
   });
 
   if (!user) {
-    throw new ApiError(404, "User does not exist");
+    // throw new ApiError(404, "User does not exist");
+    return next(new ApiError(404, "User does not exist"));
   }
 
   // check if password is correct
   const isPasswordCorrect = await user.isPasswordCorrect(password);
 
   if (!isPasswordCorrect) {
-    throw new ApiError(401, "Password is incorrect");
+    // throw new ApiError(401, "Password is incorrect");
+    return next(new ApiError(401, "Password is incorrect"));
   }
 
   const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(
@@ -200,6 +204,9 @@ const loginUser = asyncHandler(async (req, res) => {
         "User Logged In Successfully"
       )
     );
+  } catch (error) {
+    next(error); // Pass unexpected errors to the error handler
+  }
 });
 
 const logoutUser = asyncHandler(async (req, res) => {
